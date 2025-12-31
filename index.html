@@ -25,32 +25,34 @@ body{
     justify-content:center;
     text-align:center;
     z-index:9999;
-    font-size:clamp(18px,5vw,32px);
+    font-size:clamp(16px,4vw,28px);
     padding:20px;
 }
 
-/* ===== COUNTDOWN WRAPPER ===== */
+/* ===== COUNTDOWN WRAPPER (AMAN HP) ===== */
 #countdown-wrapper{
     position:fixed;
     inset:0;
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:8vh 5vw;
+    padding:10vh 6vw;   /* ruang ekstra */
     box-sizing:border-box;
     pointer-events:none;
 }
 
+/* ===== COUNTDOWN TEXT (DIPERKECILKAN) ===== */
 #countdown{
     text-align:center;
     font-weight:bold;
     color:white;
-    font-size:clamp(56px, 18vw, 140px);
-    line-height:1.1;
+    font-size:clamp(42px, 14vw, 120px); /* LEBIH KECIL */
+    line-height:1.2;
+    max-width:100%;
     text-shadow:
-        0 0 16px #00ffff,
-        0 0 32px #00ffff,
-        0 0 64px #00ffff;
+        0 0 12px #00ffff,
+        0 0 24px #00ffff,
+        0 0 48px #00ffff;
 }
 
 canvas{
@@ -64,8 +66,8 @@ canvas{
 
 <div id="rotate-warning">
     🔄<br><br>
-    Silakan putar perangkat ke <b>LANDSCAPE</b><br>
-    untuk pengalaman terbaik
+    Putar perangkat ke <b>LANDSCAPE</b><br>
+    untuk tampilan terbaik
 </div>
 
 <div id="countdown-wrapper">
@@ -75,15 +77,10 @@ canvas{
 <canvas id="canvas"></canvas>
 
 <script>
-/* ===== ORIENTATION HANDLER ===== */
+/* ===== ORIENTATION CHECK ===== */
 const warning = document.getElementById("rotate-warning");
-
 function checkOrientation(){
-    if(innerHeight > innerWidth){
-        warning.style.display = "flex";
-    }else{
-        warning.style.display = "none";
-    }
+    warning.style.display = innerHeight > innerWidth ? "flex" : "none";
 }
 addEventListener("resize", checkOrientation);
 addEventListener("orientationchange", checkOrientation);
@@ -98,46 +95,44 @@ const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 });
 
 function boom(power=1){
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = "square";
-    o.frequency.value = 120;
-    g.gain.value = 0.35 * power;
-    o.connect(g);
-    g.connect(audioCtx.destination);
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.type="square";
+    o.frequency.value=120;
+    g.gain.value=0.3*power;
+    o.connect(g); g.connect(audioCtx.destination);
     o.start();
-    o.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime+0.45);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.45);
-    o.stop(audioCtx.currentTime+0.45);
+    o.frequency.exponentialRampToValueAtTime(40,audioCtx.currentTime+0.4);
+    g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.4);
+    o.stop(audioCtx.currentTime+0.4);
 }
 
 /* ===== CANVAS ===== */
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
 
 function resize(){
-    const dpr = Math.min(devicePixelRatio||1,2);
-    canvas.width = innerWidth * dpr;
-    canvas.height = innerHeight * dpr;
-    canvas.style.width = innerWidth+"px";
-    canvas.style.height = innerHeight+"px";
+    const dpr=Math.min(devicePixelRatio||1,2);
+    canvas.width=innerWidth*dpr;
+    canvas.height=innerHeight*dpr;
+    canvas.style.width=innerWidth+"px";
+    canvas.style.height=innerHeight+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-resize();
-addEventListener("resize", resize);
+resize(); addEventListener("resize",resize);
 
 /* ===== COUNTDOWN ===== */
-const cd = document.getElementById("countdown");
-const wrapper = document.getElementById("countdown-wrapper");
-let n = 10;
+const cd=document.getElementById("countdown");
+const wrapper=document.getElementById("countdown-wrapper");
+let n=10;
 
-const timer = setInterval(()=>{
-    cd.textContent = n;
-    boom(0.5);
+const timer=setInterval(()=>{
+    cd.textContent=n;
+    boom(0.4);
     n--;
-    if(n < 0){
+    if(n<0){
         clearInterval(timer);
-        wrapper.style.display = "none";
+        wrapper.style.display="none";
         boom(2);
         startShow();
     }
@@ -146,29 +141,26 @@ const timer = setInterval(()=>{
 /* ===== BACKGROUND FIREWORK ===== */
 let bg=[];
 function spawnBG(){
-    if(innerHeight > innerWidth) return; // pause if portrait
-
+    if(innerHeight>innerWidth) return;
     const x=Math.random()*innerWidth;
     const y=Math.random()*innerHeight*0.6;
-    const count = innerWidth < 700 ? 50 : 100;
-
+    const count=innerWidth<700?40:80;
     for(let i=0;i<count;i++){
         const a=Math.random()*Math.PI*2;
-        const s=Math.random()*5+2;
+        const s=Math.random()*4+2;
         bg.push({
             x,y,
             vx:Math.cos(a)*s,
             vy:Math.sin(a)*s,
-            life:90,
+            life:80,
             color:`hsl(${Math.random()*360},100%,60%)`
         });
     }
 }
-setInterval(spawnBG,700);
+setInterval(spawnBG,800);
 
-/* ===== TEXT FIREWORK ===== */
-let particles=[];
-let phase="explode";
+/* ===== TEXT FIREWORK (DIPERKECILKAN) ===== */
+let particles=[], phase="explode";
 
 function fireworkText(text,yPos,fontScale){
     const temp=document.createElement("canvas");
@@ -176,23 +168,22 @@ function fireworkText(text,yPos,fontScale){
     temp.width=innerWidth;
     temp.height=innerHeight;
 
-    const fontSize=Math.min(innerWidth*fontScale, innerWidth<700?90:180);
+    const maxFont=innerWidth<700?70:160;
+    const fontSize=Math.min(innerWidth*fontScale, maxFont);
     tctx.fillStyle="white";
     tctx.textAlign="center";
     tctx.font=`bold ${fontSize}px Arial`;
     tctx.fillText(text,innerWidth/2,yPos);
 
     const data=tctx.getImageData(0,0,temp.width,temp.height).data;
-    const cx=innerWidth/2;
-
-    for(let y=0;y<temp.height;y+=8){
-        for(let x=0;x<temp.width;x+=8){
+    for(let y=0;y<temp.height;y+=9){
+        for(let x=0;x<temp.width;x+=9){
             const i=(y*temp.width+x)*4;
             if(data[i+3]>150){
                 const a=Math.random()*Math.PI*2;
-                const s=Math.random()*7+3;
+                const s=Math.random()*6+3;
                 particles.push({
-                    x:cx,y:yPos,
+                    x:innerWidth/2,y:yPos,
                     vx:Math.cos(a)*s,
                     vy:Math.sin(a)*s,
                     tx:x,ty:y,
@@ -201,16 +192,15 @@ function fireworkText(text,yPos,fontScale){
             }
         }
     }
-
     phase="explode";
     setTimeout(()=>phase="form",1200);
 }
 
 /* ===== SHOW TEXT ===== */
 function startShow(){
-    fireworkText("HAPPY NEW YEAR", innerHeight*0.45, 0.22);
+    fireworkText("HAPPY NEW YEAR", innerHeight*0.45, 0.18);
     setTimeout(()=>{
-        fireworkText(new Date().getFullYear()+1, innerHeight*0.8, 0.13);
+        fireworkText(new Date().getFullYear()+1, innerHeight*0.78, 0.1);
     },1500);
 }
 
@@ -218,39 +208,31 @@ function startShow(){
 function animate(){
     ctx.clearRect(0,0,innerWidth,innerHeight);
 
-    if(innerHeight <= innerWidth){
+    if(innerHeight<=innerWidth){
         bg.forEach((p,i)=>{
-            p.x+=p.vx;
-            p.y+=p.vy;
-            p.vy+=0.04;
-            p.life--;
-
-            ctx.shadowBlur=15;
+            p.x+=p.vx; p.y+=p.vy;
+            p.vy+=0.04; p.life--;
+            ctx.shadowBlur=12;
             ctx.shadowColor=p.color;
             ctx.fillStyle=p.color;
             ctx.fillRect(p.x,p.y,2,2);
-
             if(p.life<=0) bg.splice(i,1);
         });
 
         particles.forEach(p=>{
             if(phase==="explode"){
-                p.x+=p.vx;
-                p.y+=p.vy;
-                p.vx*=0.9;
-                p.vy*=0.9;
+                p.x+=p.vx; p.y+=p.vy;
+                p.vx*=0.9; p.vy*=0.9;
             }else{
                 p.x+=(p.tx-p.x)*0.08;
                 p.y+=(p.ty-p.y)*0.08;
             }
-
-            ctx.shadowBlur=20;
+            ctx.shadowBlur=18;
             ctx.shadowColor=p.color;
             ctx.fillStyle=p.color;
             ctx.fillRect(p.x,p.y,3,3);
         });
     }
-
     ctx.shadowBlur=0;
     requestAnimationFrame(animate);
 }
