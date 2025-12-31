@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy New Year Neon</title>
+
+<style>
+body{
+    margin:0;
+    background:black;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+}
+#countdown{
+    position:absolute;
+    top:35%;
+    width:100%;
+    text-align:center;
+    font-size:20vw;
+    font-weight:bold;
+    color:white;
+    text-shadow:
+        0 0 20px #00ffff,
+        0 0 40px #00ffff,
+        0 0 80px #00ffff;
+}
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+}
+@media(min-width:768px){
+    #countdown{font-size:140px;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="countdown">10</div>
+<canvas id="canvas"></canvas>
+
+<script>
+/* ===== AUDIO PETASAN SAJA ===== */
+const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+document.addEventListener("click",()=>{
+    if(audioCtx.state==="suspended") audioCtx.resume();
+},{once:true});
+
+function boom(power=1){
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+
+    o.type = "square";
+    o.frequency.value = 120;
+    g.gain.value = 0.4 * power;
+
+    o.connect(g);
+    g.connect(audioCtx.destination);
+
+    o.start();
+    o.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime+0.5);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.5);
+    o.stop(audioCtx.currentTime+0.5);
+}
+
+/* ===== CANVAS ===== */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+function resize(){
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+resize(); addEventListener("resize", resize);
+
+/* ===== COUNTDOWN 10 - 0 ===== */
+const cd = document.getElementById("countdown");
+let n = 10;
+
+const timer = setInterval(()=>{
+    cd.textContent = n;
+    boom(0.6);   // petasan kecil tiap detik
+    n--;
+    if(n < 0){
+        clearInterval(timer);
+        cd.style.display = "none";
+        boom(2); // petasan besar di 0
+        startShow();
+    }
+},1000);
+
+/* ===== BACKGROUND FIREWORK ===== */
+let bg=[];
+function spawnBG(){
+    const x=Math.random()*canvas.width;
+    const y=Math.random()*canvas.height*0.6;
+    for(let i=0;i<100;i++){
+        const a=Math.random()*Math.PI*2;
+        const s=Math.random()*6+2;
+        bg.push({
+            x,y,
+            vx:Math.cos(a)*s,
+            vy:Math.sin(a)*s,
+            life:100,
+            color:`hsl(${Math.random()*360},100%,60%)`
+        });
+    }
+}
+setInterval(spawnBG,550);
+
+/* ===== TEXT FIREWORK ===== */
+let particles=[];
+let phase="explode";
+
+function fireworkText(text,yPos,fontScale){
+    const temp=document.createElement("canvas");
+    const tctx=temp.getContext("2d");
+    temp.width=canvas.width;
+    temp.height=canvas.height;
+
+    const fontSize=Math.min(canvas.width*fontScale,200);
+    tctx.fillStyle="white";
+    tctx.textAlign="center";
+    tctx.font=`bold ${fontSize}px Arial`;
+    tctx.fillText(text,canvas.width/2,yPos);
+
+    const data=tctx.getImageData(0,0,temp.width,temp.height).data;
+    const cx=canvas.width/2;
+    const cy=yPos;
+
+    for(let y=0;y<temp.height;y+=6){
+        for(let x=0;x<temp.width;x+=6){
+            const i=(y*temp.width+x)*4;
+            if(data[i+3]>150){
+                const a=Math.random()*Math.PI*2;
+                const s=Math.random()*8+3;
+                const color=`hsl(${Math.random()*360},100%,60%)`;
+                particles.push({
+                    x:cx,y:cy,
+                    vx:Math.cos(a)*s,
+                    vy:Math.sin(a)*s,
+                    tx:x,ty:y,
+                    color
+                });
+            }
+        }
+    }
+
+    phase="explode";
+    setTimeout(()=>phase="form",1300);
+}
+
+/* ===== SHOW TEXT ===== */
+function startShow(){
+    fireworkText("HAPPY NEW YEAR",canvas.height/2,0.2);
+    setTimeout(()=>{
+        const year=new Date().getFullYear()+1;
+        fireworkText(year,canvas.height*0.82,0.11);
+    },1600);
+}
+
+/* ===== ANIMATION LOOP (NEON) ===== */
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    bg.forEach((p,i)=>{
+        p.x+=p.vx;
+        p.y+=p.vy;
+        p.vy+=0.05;
+        p.life--;
+
+        ctx.shadowBlur=20;
+        ctx.shadowColor=p.color;
+        ctx.fillStyle=p.color;
+        ctx.fillRect(p.x,p.y,2,2);
+
+        if(p.life<=0) bg.splice(i,1);
+    });
+
+    particles.forEach(p=>{
+        if(phase==="explode"){
+            p.x+=p.vx;
+            p.y+=p.vy;
+            p.vx*=0.93;
+            p.vy*=0.93;
+        }else{
+            p.x+=(p.tx-p.x)*0.08;
+            p.y+=(p.ty-p.y)*0.08;
+        }
+
+        ctx.shadowBlur=25;
+        ctx.shadowColor=p.color;
+        ctx.fillStyle=p.color;
+        ctx.fillRect(p.x,p.y,3,3);
+    });
+
+    ctx.shadowBlur=0;
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
